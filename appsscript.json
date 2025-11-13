@@ -1,0 +1,21 @@
+{
+  "timeZone": "Asia/Kolkata",
+  "dependencies": {},
+  "exceptionLogging": "STACKDRIVER",
+  "runtimeVersion": "V8",
+  "addOns": {
+    "common": {
+      "name": "Rongmei Dictionary",
+      "logoUrl": "https://ebenezergangmei.github.io/RongmeiDictionary/dist/icon.png",
+      "useLocaleFromApp": true,
+      "homepageTrigger": {
+        "runFunction": "showSidebar"
+      }
+    },
+    "docs": {
+      "homepageTrigger": {
+        "runFunction": "showSidebar"
+      }
+    }
+  }
+}
