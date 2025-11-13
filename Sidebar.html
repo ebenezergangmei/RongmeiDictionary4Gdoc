@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <base target="_top">
+    <style>
+      body { font-family: Arial, sans-serif; padding: 12px; }
+      h2 { margin: 0 0 8px 0; color: #2c3e50; }
+      #meaning { margin-top: 8px; min-height: 60px; border:1px solid #eee; padding:8px; border-radius:6px; background:#fafafa; }
+      .entry { margin-bottom:8px; }
+      .word { font-weight: bold; color:#1a73e8; }
+      footer { margin-top:12px; font-size:11px; color:#666; border-top:1px solid #eee; padding-top:8px; }
+    </style>
+  </head>
+  <body>
+    <h2>Rongmei Dictionary</h2>
+    <div id="meaning">Open the sidebar and select a cell to see the meaning.</div>
+    <footer>© 2025 Ebenezer Gangmei</footer>
+
+    <script>
+      // irregulars mapping and root/lemma helper (same as Docs version)
+      const irregulars = {
+        "children":"child","men":"man","women":"woman","mice":"mouse","geese":"goose",
+        "feet":"foot","teeth":"tooth","oxen":"ox","went":"go","gone":"go","ran":"run",
+        "ate":"eat","eaten":"eat","saw":"see","seen":"see","did":"do","done":"do",
+        "was":"be","were":"be","is":"be","are":"be","am":"be","had":"have","has":"have",
+        "having":"have","said":"say","saying":"say","made":"make","making":"make",
+        "took":"take","taken":"take","gave":"give","given":"give","found":"find"
+      };
+
+      function getRootForm(word) {
+        word = word.toLowerCase();
+        if (irregulars[word]) return irregulars[word];
+        if (word.endsWith('ies') && word.length>4) return word.slice(0,-3)+'y';
+        if (word.endsWith('es') && word.length>3) return word.slice(0,-2);
+        if (word.endsWith('s') && word.length>3) return word.slice(0,-1);
+        if (word.endsWith('ing') && word.length>5) return word.slice(0,-3);
+        if (word.endsWith('ed') && word.length>4) return word.slice(0,-2);
+        return word;
+      }
+
+      // change this to your source: GitHub raw, or call server to fetch sheet dictionary
+      // If you switched dictionary to Google Sheet, the client will call the server to get the dictionary.
+      // For speed, we will request dictionary data from the server once and cache it in the sidebar.
+      let dictionaryCache = null;
+      const DICT_URL = 'https://raw.githubusercontent.com/ebenezergangmei/RongmeiDictionary/main/dist/dictionary.json';
+      // If you use Google Sheet server-side, we will call google.script.run.getDictionaryData instead.
+
+      async function loadDictionary() {
+        if (dictionaryCache) return dictionaryCache;
+        try {
+          const res = await fetch(DICT_URL);
+          if (!res.ok) throw new Error('Failed to load dictionary (HTTP ' + res.status + ')');
+          const json = await res.json();
+          dictionaryCache = json;
+          return json;
+        } catch (err) {
+          document.getElementById('meaning').innerHTML = '⚠️ Failed to load dictionary: ' + err.message;
+          return null;
+        }
+      }
+
+      async function refresh() {
+        // ask server for current selected text in sheet
+        google.script.run.withSuccessHandler(async function(selectedText) {
+          if (!selectedText) {
+            // do not clear; keep old results until new selection (as user requested earlier)
+            return;
+          }
+          // clean and parse selectedText
+          const cleaned = selectedText.replace(/[^a-zA-Z0-9\s-]/g, ' ').trim();
+          if (!cleaned) return;
+
+          const tokens = cleaned.split(/\s+/).filter(Boolean);
+          // dedupe case-insensitive, keep original display order of first occurrences
+          const seen = new Set();
+          const unique = [];
+          for (let t of tokens) {
+            const lk = t.toLowerCase();
+            if (!seen.has(lk)) { seen.add(lk); unique.push(t); }
+          }
+
+          const dict = await loadDictionary();
+          if (!dict) return;
+
+          // build output
+          let html = '';
+          let i = 1;
+          for (let w of unique) {
+            const lk = w.toLowerCase();
+            let meaning = dict[lk];
+            if (!meaning) {
+              const root = getRootForm(lk);
+              meaning = dict[root];
+              if (meaning) meaning = meaning + ` <i>(from root: ${root})</i>`;
+            }
+            if (!meaning) meaning = '<span style="color:gray">❌ Not found</span>';
+            html += `<div class="entry"><span class="word">${i}. ${w}</span>: ${meaning}</div>`;
+            i++;
+          }
+          document.getElementById('meaning').innerHTML = html;
+        }).getSelectedText();
+      }
+
+      // Poll every 1500ms. Shorter interval gives quicker update but uses more calls.
+      setInterval(refresh, 1500);
+
+      // Also refresh immediately on load
+      refresh();
+    </script>
+  </body>
+</html>
