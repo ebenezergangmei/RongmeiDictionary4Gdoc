@@ -52,6 +52,27 @@
                           // etc…
                         ];
 
+
+                async function loadAllDictionaries() {
+                  if (dictionaryCache) return dictionaryCache;
+                  dictionaryCache = {};
+                
+                  try {
+                    for (const url of DICT_URLS) {
+                      const res = await fetch(url);
+                      if (!res.ok) throw new Error('Failed to load ' + url);
+                      const part = await res.json();
+                      Object.assign(dictionaryCache, part);
+                    }
+                    return dictionaryCache;
+                  } catch (err) {
+                    document.getElementById('meaning').innerHTML =
+                      '⚠️ Failed to load multi-dictionary: ' + err.message;
+                    return null;
+                  }
+                }
+
+      
       // If you use Google Sheet server-side, we will call google.script.run.getDictionaryData instead.
 
       async function loadDictionary() {
@@ -88,7 +109,7 @@
             if (!seen.has(lk)) { seen.add(lk); unique.push(t); }
           }
 
-          const dict = await loadDictionary();
+          const dict = await loadAllDictionaries();
           if (!dict) return;
 
           // build output
