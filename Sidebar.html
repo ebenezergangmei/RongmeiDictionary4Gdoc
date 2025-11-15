@@ -42,7 +42,16 @@
       // If you switched dictionary to Google Sheet, the client will call the server to get the dictionary.
       // For speed, we will request dictionary data from the server once and cache it in the sidebar.
       let dictionaryCache = null;
-      const DICT_URL = 'https://raw.githubusercontent.com/ebenezergangmei/RongmeiDictionary/main/dist/dictionary.json';
+      const DICT_URLS = [
+                          'https://raw.githubusercontent.com/ebenezergangmei/RongmeiDictionary4Gdoc/main/dist/dictionary.json',
+                          'https://raw.githubusercontent.com/ebenezergangmei/RongmeiDictionary4Gdoc/main/dist/dictionary-2.json',
+                          'https://raw.githubusercontent.com/ebenezergangmei/RongmeiDictionary4Gdoc/main/dist/dictionary-3.json',
+                          // add more URLs here:
+                          // 'https://raw.githubusercontent.com/ebenezergangmei/RongmeiDictionary4Gdoc/main/dist/dictionary-4.json',
+                          // 'https://raw.githubusercontent.com/ebenezergangmei/RongmeiDictionary4Gdoc/main/dist/cultural-terms.json',
+                          // etc…
+                        ];
+
       // If you use Google Sheet server-side, we will call google.script.run.getDictionaryData instead.
 
       async function loadDictionary() {
